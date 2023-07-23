@@ -8,40 +8,30 @@ import androidx.annotation.NonNull
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.KeyData.CHANNEL
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity: FlutterActivity() {
+
+
+
+
 
     @SuppressLint("Range", "SuspiciousIndentation")
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "example.com/channel").setMethodCallHandler {
                 call, result ->
-            if(call.method == "getContacts") {
-                /// Check Contact Permission
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
-                    ActivityCompat.requestPermissions(
-                        this,
-                        arrayOf(Manifest.permission.READ_CONTACTS),
-                        0
-                    )
-                } else {
-
-                 var contacts = getNamePhoneDetails();
-                    println(contacts)
-
-                    /// distincBy filter the list and not let to add same contact again
-                    /// also convert contacts to map to catch easily in flutter as a
-                    val contactMaps = contacts.distinctBy { it.name }.map { it.toMap() }
-
-                    result.success(contactMaps)
+            when (call.method) {
+                "getContacts" -> {
+                    getContacts(result)
                 }
+                else -> {
+                    result.notImplemented()
+                }
+            }
 
-            }
-            else {
-                result.notImplemented()
-            }
         }
     }
     @SuppressLint("Range")
@@ -63,6 +53,18 @@ class MainActivity: FlutterActivity() {
 
         return contacts
     }
+
+    private fun getContacts(result: MethodChannel.Result) {
+        val contacts = getNamePhoneDetails()
+        println(contacts)
+
+        // DistincBy filtreleme yapın, aynı kişileri tekrar eklemeyin.
+        // Aynı zamanda kişileri harita olarak döndürün.
+        val contactMaps = contacts.distinctBy { it.name }.map { it.toMap() }
+
+        result.success(contactMaps)
+    }
+
 }
 
 data class Contact(val id: String, val name: String, val number: String) {
